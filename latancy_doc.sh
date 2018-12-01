@@ -86,6 +86,13 @@ while getopts ":vhd:f:" opt; do
 	esac	
 done
 
+isIPInfile=$(grep $DEST $inFile) 
+
+if [ "$isIPInfile" = "" ]; then
+	echo "$0: Error: $DEST was not found in $inFile" >&2
+	exit 2
+fi
+
 #get the first id before the UUID is set, and the time of the first packet.
 firstID=( $(sed 'N; s/\(id=[0-9]*\)\n/\1 /g' $inFile | grep -e "\[00000000 - 00000000 00000000 00000000 00000000\].*$DEST" | awk 'NR==1 { print $3" "$15}') )
 
@@ -94,31 +101,31 @@ UUID=$(grep -e ${firstID[1]}  test2| awk -F"[" 'NR==2 {print $4; } ' | awk -F] '
 
 #create an array of all the times and id for the packets in the connection
 arr=( $(echo " ${firstID[@]}"; grep "$UUID" test2 | awk '{print $3" "$15}') )
+#get the total number of entries in the arra
 arr_count=${#arr[@]}
-echo $arr_count
+#echo $arr_count
+loop through the array 
 for i in ${!arr[@]}; do
 	if [ $(($i % 2 )) -eq 0 ]; then
 		if [ ! $i -eq $((arr_count -2)) ]; then
-			echo old $i
-			echo i is ${arr[$i]}
+			#echo old $i
+			#echo i is ${arr[$i]}
 			id=$((i+1))
 			j=$((i+2))
 			jid=$((j+1))
 	
-			echo j is${arr[$j]}
-			echo id ${arr[$id]}
-			echo jid ${arr[$jid]}
+			#echo j is${arr[$j]}
+			echo first ${arr[$id]}
+			echo second ${arr[$jid]}
 				#if [  ${arr[$id]} = ${arr[$jid]} ]; then
 					timeMS=$(time_diff "${arr[$i]}" "${arr[$j]}")
 					echo "$timeMS" ms
 				#else
 					#echo failed
 				#fi
-			sleep 5
+			#sleep 5
 		fi
 	fi
-	i=$((i+2))
-	echo new $i
 done
 
 #echo ${firstID[@]}
