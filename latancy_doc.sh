@@ -73,7 +73,7 @@ while getopts ":vhd:f:" opt; do
 		;;
 		h)
 			echo "$help_menu"
-		exit 0
+			exit 0
 		;;
     		\?)
       			echo "Invalid option: -$OPTARG" >&2
@@ -95,16 +95,16 @@ fi
 
 #get the first id before the UUID is set, and the time of the first packet.
 firstID=( $(sed 'N; s/\(id=[0-9]*\)\n/\1 /g' $inFile | grep -e "\[00000000 - 00000000 00000000 00000000 00000000\].*$DEST" | awk 'NR==1 { print $3" "$15}') )
-
+echo ${firstID[@]}
 #use the id of the first packet to get the UUID for the connection
-UUID=$(grep -e ${firstID[1]}  test2| awk -F"[" 'NR==2 {print $4; } ' | awk -F] '{print $1}')
+UUID=$(grep -e ${firstID[1]}  $inFile | awk -F"[" 'NR==2 {print $4; } ' | awk -F] '{print $1}')
 
 #create an array of all the times and id for the packets in the connection
-arr=( $(echo " ${firstID[@]}"; grep "$UUID" test2 | awk '{print $3" "$15}') )
+arr=( $(echo " ${firstID[@]}"; grep "$UUID" $inFile | awk '{print $3" "$15}') )
 #get the total number of entries in the arra
 arr_count=${#arr[@]}
 #echo $arr_count
-loop through the array 
+#loop through the array 
 for i in ${!arr[@]}; do
 	if [ $(($i % 2 )) -eq 0 ]; then
 		if [ ! $i -eq $((arr_count -2)) ]; then
@@ -128,5 +128,4 @@ for i in ${!arr[@]}; do
 	fi
 done
 
-#echo ${firstID[@]}
 #echo ${arr[@]} | sed 's/\(id=[0-9]*\)/\1\n/g' | nl
