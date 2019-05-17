@@ -1,6 +1,6 @@
 #!/bin/bash
 Version="0.3 Bata"
-Author="Kenneth Foster"
+#Author=Kenneth Foster
 
 help_menu="
 usage: $0 -d <IP> -f <INPUT fILE>
@@ -20,7 +20,7 @@ function valid_ip()
     if [[ $ip =~ ^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$ ]]; then
         OIFS=$IFS
         IFS='.'
-        ip=($ip)
+        ip=("$ip")
         IFS=$OIFS
         [[ ${ip[0]} -le 255 && ${ip[1]} -le 255 \
             && ${ip[2]} -le 255 && ${ip[3]} -le 255 ]]
@@ -37,8 +37,10 @@ function time_diff()
         local time1=$1
         local time2=$2
         #echo $time1 $time2
-        local time1_nano=$(date +%S%N -d $time1)
-        local time2_nano=$(date +%S%N -d $time2)
+        local time1_nano
+	time1_nano=$(date +%S%N -d "$time1")
+        local time2_nano
+	time2_nano=$(date +%S%N -d "$time2")
         #echo $time1_nano
         #echo $time2_nano
         echo "scale=5; ($time2_nano - $time1_nano)/1000000" | bc
@@ -58,13 +60,13 @@ while getopts ":vhd:f:" opt; do
 		;;
 		d)
 			DEST=$OPTARG
-			if [ ! $(valid_ip $OPTARG) -eq 0 ]; then 
+			if [ ! "$("valid_ip $OPTARG")" -eq 0 ]; then 
 				echo "$0: -d:$OPTARG is not a valid IP address"	>&2
 				exit 1
 			fi
    		;;
 		f)
-			if [ -r $OPTARG  ]; then
+			if [ -r "$OPTARG"  ]; then
 				inFile=$OPTARG
 			else
 				echo "$0: -f: $OPTARG is not a vaild file. make sure the file exists and is readable" >&2
@@ -86,7 +88,7 @@ while getopts ":vhd:f:" opt; do
 	esac	
 done
 
-isIPInfile=$(grep $DEST $inFile) 
+isIPInfile=$(grep "$DEST" "$inFile") 
 
 if [ "$isIPInfile" = "" ]; then
 	echo "$0: Error: $DEST was not found in $inFile" >&2
@@ -94,20 +96,20 @@ if [ "$isIPInfile" = "" ]; then
 fi
 
 #get the first id before the UUID is set, and the time of the first packet.
-firstID=( $(sed 'N; s/\(id=[0-9]*\)\n/\1 /g' $inFile | grep -e "\[00000000 - 00000000 00000000 00000000 00000000\].*$DEST" | awk 'NR==1 { print $3" "$15}') )
-echo ${firstID[@]}
+firstID=( $(sed 'N; s/\(id=[0-9]*\)\n/\1 /g' "$inFile" | grep -e "\[00000000 - 00000000 00000000 00000000 00000000\].*$DEST" | awk 'NR==1 { print $3" "$15}') )
+echo "${firstID[@]}"
 #use the id of the first packet to get the UUID for the connection
-UUID=$(grep -e ${firstID[1]}  $inFile | awk -F"[" 'NR==2 {print $4; } ' | awk -F] '{print $1}')
+UUID=$(grep -e "${firstID[1]}"  "$inFile" | awk -F"[" 'NR==2 {print $4; } ' | awk -F] '{print $1}')
 
 #create an array of all the times and id for the packets in the connection
-arr=( $(echo " ${firstID[@]}"; grep "$UUID" $inFile | awk '{print $3" "$15}') )
+arr=( $(echo "${firstID[@]}"; grep "$UUID" "$inFile" | awk '{print $3" "$15}') )
 #get the total number of entries in the arra
 arr_count=${#arr[@]}
 #echo $arr_count
 #loop through the array 
-for i in ${!arr[@]}; do
-	if [ $(($i % 2 )) -eq 0 ]; then
-		if [ ! $i -eq $((arr_count -2)) ]; then
+for i in "${!arr[@]}"; do
+	if [ $(("$i" % 2 )) -eq 0 ]; then
+		if [ ! "$i" -eq $((arr_count -2)) ]; then
 			#echo old $i
 			#echo i is ${arr[$i]}
 			id=$((i+1))
@@ -115,8 +117,8 @@ for i in ${!arr[@]}; do
 			jid=$((j+1))
 	
 			#echo j is${arr[$j]}
-			echo first ${arr[$id]}
-			echo second ${arr[$jid]}
+			echo first "${arr[$id]}"
+			echo second "${arr[$jid]}"
 				#if [  ${arr[$id]} = ${arr[$jid]} ]; then
 					timeMS=$(time_diff "${arr[$i]}" "${arr[$j]}")
 					echo "$timeMS" ms
